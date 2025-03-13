@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { fetchRemoteData } from "@/app/service/remoteData";
 
-// GET: Fetch all SSR connections
 export const GET = async () => {
-    return new Promise((resolve) => {
-        exec("ss -tn src :8388", (err, stdout) => {
-            if (err) {
-                resolve(NextResponse.json({ error: err.message }, { status: 500 }));
-            } else {
-                resolve(NextResponse.json({ connections: stdout }));
-            }
-        });
-    });
+    try {
+        const data = await fetchRemoteData('ssr')
+        return NextResponse.json({ status: data });
+    } catch (error) {
+        return NextResponse.json({ error: "Failed to read OpenVPN log" }, { status: 500 });
+    }
 }
