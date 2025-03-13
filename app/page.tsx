@@ -1,95 +1,71 @@
-import Image from "next/image";
-import styles from "./styles/page.module.css";
+import { fetchRemoteData } from "./service/remoteData";
+import { parseOpenVPNData } from "./utils/parseOpenVPN";
+import { parseSSRData } from "./utils/parseSSR";
+import styles from './styles/page.module.css'
+import { convertToBeijingTime, formatBytes } from "./utils/utils";
 
-export default function Home() {
+export default async function Dashboard() {
+    // Fetch OpenVPN and SSR data
+    const openvpnRaw = await fetchRemoteData("openvpn");
+    const ssrRaw = await fetchRemoteData("ssr");
+
+    // Parse data into structured objects
+    const openvpnClients = parseOpenVPNData(openvpnRaw);
+    const ssrConnections = parseSSRData(ssrRaw);
+
     return (
         <div className={styles.page}>
+            <h1>VPN Dashboard</h1>
             <main className={styles.main}>
-                <Image
-                    className={styles.logo}
-                    src="/next.svg"
-                    alt="Next.js logo"
-                    width={180}
-                    height={38}
-                    priority
-                />
-                <ol>
-                    <li>
-                        Get started by editing <code>app/page.tsx</code>.
-                    </li>
-                    <li>Save and see your changes instantly.</li>
-                </ol>
-
-                <div className={styles.ctas}>
-                    <a
-                        className={styles.primary}
-                        href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Image
-                            className={styles.logo}
-                            src="/vercel.svg"
-                            alt="Vercel logomark"
-                            width={20}
-                            height={20}
-                        />
-                        Deploy now
-                    </a>
-                    <a
-                        href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.secondary}
-                    >
-                        Read our docs
-                    </a>
-                </div>
+{/* OpenVPN Table */}
+                <h2 className="text-xl font-semibold mb-2">OpenVPN Clients</h2>
+                <table className="w-full border border-gray-400 mb-6 table-auto">
+                    <thead>
+                        <tr className={styles.secondary}>
+                            <th className={styles.secondary}>Name</th>
+                            <th className={styles.secondary}>SRC IP</th>
+                            <th className={styles.secondary}>Received</th>
+                            <th className={styles.secondary}>Sent</th>
+                            <th className={styles.secondary}>Since</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {openvpnClients.map((client, index) => (
+                            <tr key={index} className="border border-gray-400">
+                                <td className="border border-gray-400 p-2">{client.commonName}</td>
+                                <td className="border border-gray-400 p-2">{client.realAddress}</td>
+                                <td className="border border-gray-400 p-2">{formatBytes(client.bytesReceived)}</td>
+                                <td className="border border-gray-400 p-2">{formatBytes(client.bytesSent)}</td>
+                                <td className="border border-gray-400 p-2">{convertToBeijingTime(client.connectedSince)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </main>
-            <footer className={styles.footer}>
-                <a
-                    href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/file.svg"
-                        alt="File icon"
-                        width={16}
-                        height={16}
-                    />
-                    Learn
-                </a>
-                <a
-                    href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/window.svg"
-                        alt="Window icon"
-                        width={16}
-                        height={16}
-                    />
-                    Examples
-                </a>
-                <a
-                    href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/globe.svg"
-                        alt="Globe icon"
-                        width={16}
-                        height={16}
-                    />
-                    Go to nextjs.org →
-                </a>
-            </footer>
+
+            <div className={styles.main}>
+
+                {/* SSR Table */}
+                <h2 className="text-xl font-semibold mb-2">SSR Connections</h2>
+                <table className="w-full border-collapse border border-gray-400">
+                    <thead>
+                        <tr className="bg-gray-200">
+                            <th className="border border-gray-400 p-2">Local IP</th>
+                            <th className="border border-gray-400 p-2">SRC IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ssrConnections.map((conn, index) => (
+                            <tr key={index} className="border border-gray-400">
+                                <td className="border border-gray-400 p-2">{conn.localAddress}</td>
+                                <td className="border border-gray-400 p-2">{conn.peerAddress}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+            </div>
+            
         </div>
     );
 }
