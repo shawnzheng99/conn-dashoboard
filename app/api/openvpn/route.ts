@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchRemoteData } from "@/app/service/remoteData";
-import { parseOpenVPNData } from "@/app/utils/parseOpenvpn";
+import { parseOpenVPNData } from "../../utils/parseOpenVPN"
 
 export const GET = async () => {
     try {

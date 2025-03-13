@@ -1,25 +1,21 @@
+export type OpenVPNRoute = {
+    virtualAddress: string;
+    lastRef: string;
+};
+
 export type OpenVPNClient = {
     commonName: string;
     realAddress: string;
     bytesReceived: number;
     bytesSent: number;
     connectedSince: string;
+    routes: OpenVPNRoute[]; // Routes specific to this client
 };
 
-export type OpenVPNRoute = {
-    virtualAddress: string;
-    commonName: string;
-    realAddress: string;
-    lastRef: string;
-};
-
-export function parseOpenVPNData(rawData: string): {
-    clients: OpenVPNClient[];
-    routes: OpenVPNRoute[];
-} {
+export function parseOpenVPNData(rawData: string): OpenVPNClient[] {
     const lines = rawData.split("\n");
     const clients: OpenVPNClient[] = [];
-    const routes: OpenVPNRoute[] = [];
+    const clientMap: Record<string, OpenVPNClient> = {}; // Map to link clients to routes
     
     let section: "clients" | "routes" | null = null;
 
@@ -40,24 +36,29 @@ export function parseOpenVPNData(rawData: string): {
         const values = line.split(",");
 
         if (section === "clients" && values.length === 5) {
-            clients.push({
+            const client: OpenVPNClient = {
                 commonName: values[0].trim(),
                 realAddress: values[1].trim(),
                 bytesReceived: parseInt(values[2].trim(), 10),
                 bytesSent: parseInt(values[3].trim(), 10),
                 connectedSince: values[4].trim(),
-            });
+                routes: [] // Initialize empty route array
+            };
+            clients.push(client);
+            clientMap[client.commonName] = client; // Store reference for linking routes
         }
 
         if (section === "routes" && values.length === 4) {
-            routes.push({
-                virtualAddress: values[0].trim(),
-                commonName: values[1].trim(),
-                realAddress: values[2].trim(),
-                lastRef: values[3].trim(),
-            });
+            const [virtualAddress, commonName, realAddress, lastRef] = values.map(v => v.trim());
+
+            if (clientMap[commonName]) {
+                clientMap[commonName].routes.push({
+                    virtualAddress,
+                    lastRef
+                });
+            }
         }
     }
 
-    return { clients, routes };
+    return clients;
 }
