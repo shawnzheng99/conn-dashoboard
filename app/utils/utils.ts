@@ -22,3 +22,5 @@ export const convertToBeijingTime = (utcTime: string): string => {
         hour12: false,
     }).format(date);
 }
+
+export const removePortFrom = (ip: string): string => ip.split(':')[0]
